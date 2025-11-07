@@ -1,0 +1,8 @@
+{
+  "name": "Siddiq Pintar AI Notes",
+  "description": "An AI-powered application to take notes, summarize content, add tags, and record voice notes. Your smart assistant, Siddiq Pintar, helps you capture and condense information effortlessly.",
+  "requestFramePermissions": [
+    "microphone",
+    "camera"
+  ]
+}
