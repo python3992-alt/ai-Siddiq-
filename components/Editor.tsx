@@ -11,13 +11,14 @@ interface EditorProps {
   onUpdate: (updatedNote: Partial<Note>) => void;
   onSummarize: (content: string) => Promise<void>;
   onAskAi: (question: string) => Promise<void>;
+  onGenerateImage: (prompt: string) => Promise<void>;
   isLoading: boolean;
   statusMessage: string;
   showStatus: (message: string, duration?: number) => void;
   onToggleSidebar: () => void;
 }
 
-const Editor: React.FC<EditorProps> = ({ note, onUpdate, onSummarize, onAskAi, isLoading, statusMessage, showStatus, onToggleSidebar }) => {
+const Editor: React.FC<EditorProps> = ({ note, onUpdate, onSummarize, onAskAi, onGenerateImage, isLoading, statusMessage, showStatus, onToggleSidebar }) => {
   const [content, setContent] = useState(note.content);
   const [title, setTitle] = useState(note.title);
   const [aiPrompt, setAiPrompt] = useState('');
@@ -275,8 +276,10 @@ const Editor: React.FC<EditorProps> = ({ note, onUpdate, onSummarize, onAskAi, i
     setIsGeneratingImage(true);
     setGeneratedImageUrl(null);
     try {
-        const base64Data = await generateImage(imageGenerationPrompt);
-        setGeneratedImageUrl(`data:image/png;base64,${base64Data}`);
+        await onGenerateImage(imageGenerationPrompt);
+        // Get the latest note to retrieve the newly generated image
+        showStatus('Gambar berhasil dibuat!', 2000);
+        handleCloseImageGenerator();
     } catch (error) {
         console.error(error);
         const errorMessage = error instanceof Error ? error.message : String(error);
@@ -341,6 +344,39 @@ const Editor: React.FC<EditorProps> = ({ note, onUpdate, onSummarize, onAskAi, i
           placeholder="Mulai nulis di sini..."
           className="w-full h-full bg-transparent text-slate-200 resize-none focus:outline-none text-lg leading-relaxed"
         />
+        
+        {/* Display Generated Images */}
+        {note.images && note.images.length > 0 && (
+          <div className="mt-6 pt-6 border-t border-slate-800">
+            <h3 className="text-lg font-semibold text-slate-300 mb-4">Gambar dari Siddiq AI</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {note.images.map((imageBase64, index) => (
+                <div key={index} className="relative group">
+                  <img 
+                    src={`data:image/png;base64,${imageBase64}`} 
+                    alt={`Generated ${index + 1}`}
+                    className="w-full h-auto rounded-lg shadow-lg border border-slate-700"
+                  />
+                  <button
+                    onClick={() => {
+                      const link = document.createElement('a');
+                      link.href = `data:image/png;base64,${imageBase64}`;
+                      link.download = `siddiq-ai-${index + 1}.png`;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      showStatus('Gambar lagi diunduh!', 2000);
+                    }}
+                    className="absolute top-2 right-2 bg-slate-900/80 hover:bg-slate-800 text-white p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Unduh Gambar"
+                  >
+                    <DownloadIcon className="w-5 h-5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Footer / Toolbar */}

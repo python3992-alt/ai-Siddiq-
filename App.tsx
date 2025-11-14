@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Note } from './types';
 import { INITIAL_NOTES } from './constants';
-import { summarizeTextStream, getAiResponseStream } from './services/geminiService';
+import { summarizeTextStream, getAiResponseStream, generateImage } from './services/geminiService';
 import Editor from './components/Editor';
 import { PlusIcon, FileTextIcon, CloudIcon, BrainCircuitIcon, XIcon, MenuIcon } from './components/icons';
 import NoteItem from './components/NoteItem';
@@ -21,6 +21,7 @@ const App: React.FC = () => {
         id: Date.now().toString(),
         title: 'Siddiq Pintar',
         content: '',
+        images: [],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -48,6 +49,7 @@ const App: React.FC = () => {
       id: Date.now().toString(),
       title: 'Siddiq Pintar',
       content: '',
+      images: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -133,6 +135,34 @@ const App: React.FC = () => {
     }
   };
 
+  const handleGenerateImage = async (prompt: string) => {
+    if (!activeNoteId) return;
+    setIsLoading(true);
+    setStatusMessage('Siddiq AI lagi bikin gambar...');
+
+    try {
+      const base64Image = await generateImage(prompt);
+      
+      setNotes(prevNotes =>
+        prevNotes.map(note =>
+          note.id === activeNoteId 
+            ? { 
+                ...note, 
+                images: [...(note.images || []), base64Image],
+                updatedAt: new Date().toISOString() 
+              } 
+            : note
+        )
+      );
+      showStatus('Gambar udah jadi!', 3000);
+    } catch (error) {
+      console.error(error);
+      showStatus('Gagal bikin gambar.', 3000);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="bg-transparent text-slate-200 font-sans flex h-screen overflow-hidden">
        {/* Overlay for mobile */}
@@ -191,6 +221,7 @@ const App: React.FC = () => {
             onUpdate={handleUpdateNote}
             onSummarize={handleSummarize}
             onAskAi={handleAskAi}
+            onGenerateImage={handleGenerateImage}
             isLoading={isLoading}
             statusMessage={statusMessage}
             showStatus={showStatus}
